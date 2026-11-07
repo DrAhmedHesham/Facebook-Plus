@@ -3,12 +3,9 @@
 // Runs on facebook.com (and fb.* short domains) pages loaded in Safari and sends
 // the viewer into the sideloaded Facebook app through its fb:// URL scheme.
 //
-// Resolution order for the native destination:
-//   1. the app link Facebook advertises in <meta property="al:ios:url"> (fb://…)
-//   2. the Smart App Banner's app-argument in <meta name="apple-itunes-app">
-//   3. the FacebookPlus link bridge, which carries the clean HTTPS URL into the
-//      app so FBPLinkBridge can resolve it through Facebook's Universal Link
-//      handler instead of the facewebmodal path that falls back to Home:
+// Always use the FacebookPlus link bridge, which carries the clean HTTPS URL
+// into the app. Facebook's advertised fb:// metadata changes between releases
+// and can bypass the bridge or fall back to Home on a re-signed build:
 //        fb://fbplusbridge?url=<current url>
 //
 // A short-lived sessionStorage guard prevents a redirect loop if iOS bounces the
@@ -19,25 +16,6 @@
 
   const currentURL = () => new URL(window.location.href);
   const attemptKey = () => `open-in-facebook:${window.location.href}`;
-
-  function fbURLFromMeta(selector, attribute) {
-    const value = document.querySelector(selector)?.getAttribute(attribute);
-    return value && value.startsWith("fb://") ? value : null;
-  }
-
-  function appArgumentURL() {
-    const banner = document
-      .querySelector('meta[name="apple-itunes-app"]')
-      ?.getAttribute("content");
-    const encoded = banner?.match(/(?:^|,\s*)app-argument=([^,]+)/)?.[1];
-    if (!encoded) return null;
-    try {
-      const argument = decodeURIComponent(encoded);
-      return argument.startsWith("fb://") ? argument : null;
-    } catch {
-      return null;
-    }
-  }
 
   // google.js stashes the clean Facebook URL it was sent from in the fragment,
   // because fragments survive HTTP redirects and are never sent to the server.
@@ -57,11 +35,7 @@
   }
 
   function nativeDestination() {
-    return (
-      fbURLFromMeta('meta[property="al:ios:url"]', "content") ||
-      appArgumentURL() ||
-      genericFallback()
-    );
+    return genericFallback();
   }
 
   function openInApp() {
@@ -80,16 +54,5 @@
     return true;
   }
 
-  if (openInApp()) return;
-
-  // Facebook injects some of its metadata after first paint; watch briefly for a
-  // better (app-link) destination, then give up.
-  const observer = new MutationObserver(() => {
-    if (fbURLFromMeta('meta[property="al:ios:url"]', "content") || appArgumentURL()) {
-      observer.disconnect();
-      openInApp();
-    }
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  setTimeout(() => observer.disconnect(), 5000);
+  openInApp();
 })();
