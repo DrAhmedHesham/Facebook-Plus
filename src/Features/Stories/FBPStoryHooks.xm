@@ -64,6 +64,29 @@ shouldMarkThreadSeenStateUpdates:(BOOL)shouldUpdate {
 
 %end // FBPStorySeenLegacy
 
+// Newer Facebook builds also update story receipt state through a dedicated
+// writer. Suppressing only FBSnacksBucketsSeenStateManager is no longer enough:
+// this writer can send the bucket/thread seen transition independently.
+%group FBPStorySeenWriter
+
+%hook FBSnacksSurfaceAwareSeenStateWriter
+
+- (void)setHasSeenBucketWithID:(id)bucketID
+              lastSeenThreadID:(id)threadID
+                   isLastIndex:(BOOL)isLastIndex {
+    if (FBPEnabled(FBPKeyAnonymousStories) && !gAllowSeenPassthrough) return;
+    %orig;
+}
+
+- (void)setHasSeenMultiBucketSIFUnitWithID:(id)unitID {
+    if (FBPEnabled(FBPKeyAnonymousStories) && !gAllowSeenPassthrough) return;
+    %orig;
+}
+
+%end
+
+%end // FBPStorySeenWriter
+
 #pragma mark - Auto-advance
 
 %group FBPStoryAdvance
@@ -414,6 +437,13 @@ void FBPInitStoryHooks(void) {
         } else {
             FBPLog(@"no known _markThreadAsSeen: variant — incognito disabled");
         }
+    }
+
+    Class seenWriter = objc_getClass("FBSnacksSurfaceAwareSeenStateWriter");
+    SEL bucketWriter = NSSelectorFromString(
+        @"setHasSeenBucketWithID:lastSeenThreadID:isLastIndex:");
+    if (seenWriter && [seenWriter instancesRespondToSelector:bucketWriter]) {
+        FBP_ONCE(gSeenWriter) { %init(FBPStorySeenWriter); }
     }
 
     if (objc_getClass("FBSnacksThreadSwitcherViewController")) {
