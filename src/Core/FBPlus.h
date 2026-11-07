@@ -86,6 +86,7 @@ extern NSString *const FBPKeyFontScale;         // Custom-font size multiplier (
 
 // Links
 extern NSString *const FBPKeyLinksInSafari;     // Open external links in the default browser
+extern NSString *const FBPKeyBlockCalls;        // Suppress Messenger calls in Facebook
 
 // Other
 extern NSString *const FBPKeyNotifyUpdates;
