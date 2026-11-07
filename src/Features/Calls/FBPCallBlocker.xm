@@ -20,10 +20,12 @@
 // -application:didReceiveRemoteNotification:…, or APNs registration, so every
 // non-call notification (messages, reactions, reminders, …) keeps working.
 //
-// Always on — there is no preference gate. PKPushRegistry and CXProvider are
-// system classes that always exist, so the installer latches once on first run.
+// Opt-in because removing the app's VoIP registration changes notification
+// behavior. PKPushRegistry and CXProvider are system classes that always exist,
+// so the installer latches once on first run and consults the preference per call.
 
 #import "FBPlus.h"
+#import "FBPPrefs.h"
 
 #import <PushKit/PushKit.h>
 #import <CallKit/CallKit.h>
@@ -34,7 +36,8 @@
 %hook PKPushRegistry
 
 - (void)setDesiredPushTypes:(NSSet<PKPushType> *)desiredPushTypes {
-    if ([desiredPushTypes containsObject:PKPushTypeVoIP]) {
+    if (FBPEnabled(FBPKeyBlockCalls) &&
+        [desiredPushTypes containsObject:PKPushTypeVoIP]) {
         NSMutableSet *stripped = [desiredPushTypes mutableCopy];
         [stripped removeObject:PKPushTypeVoIP];
         desiredPushTypes = stripped;
@@ -49,6 +52,10 @@
 - (void)reportNewIncomingCallWithUUID:(NSUUID *)UUID
                                update:(CXCallUpdate *)update
                            completion:(void (^)(NSError *error))completion {
+    if (!FBPEnabled(FBPKeyBlockCalls)) {
+        %orig;
+        return;
+    }
     // Swallow the call: do not present any call UI. Still invoke the completion
     // (with no error) so Facebook's call-setup code does not hang waiting on it.
     if (completion) completion(nil);
