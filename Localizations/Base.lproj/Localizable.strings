@@ -55,6 +55,8 @@
 "row.reset.title" = "Reset All Settings";
 "row.linksinsafari.title" = "Open Links in Safari";
 "row.linksinsafari.desc" = "Opens external links in your default browser instead of the in-app browser.";
+"row.blockcalls.title" = "Block Calls in Facebook";
+"row.blockcalls.desc" = "Prevents Facebook from registering for Messenger calls. Regular notifications are unaffected.";
 "row.language.title" = "Language";
 "reset.title" = "Reset All Settings";
 "reset.message" = "Every option returns to its default. This cannot be undone.";
