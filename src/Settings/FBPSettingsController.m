@@ -433,6 +433,7 @@ static NSArray<NSDictionary *> *FBPCategories(void) {
            kRowIcon : @"setting", kRowCategory : @[
             FBPSection(nil, @[
                 FBPSwitchRow(FBPKeyLinksInSafari, FBPL(@"row.linksinsafari.title"), FBPL(@"row.linksinsafari.desc"), @"safari.fill"),
+                FBPSwitchRow(FBPKeyBlockCalls, FBPL(@"row.blockcalls.title"), FBPL(@"row.blockcalls.desc"), @"phone.down.fill"),
                 FBPActionRow(kActionLanguage, FBPL(@"row.language.title"), nil, @"globe", NO),
             ]),
             FBPSection(nil, @[
